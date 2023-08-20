@@ -8,7 +8,11 @@ class OrderInMemRepository {
         private val orderStorage = mutableListOf<Order>()
     }
 
-    fun getAllOrders() = orderStorage
+    fun getAllOrders(customerId : Int) : List<Order>{
+        return orderStorage.filter { order ->
+            order.customerId == customerId
+        }
+    }
 
     fun addOrder(vararg order: Order) : Boolean{
         return orderStorage.addAll(order)

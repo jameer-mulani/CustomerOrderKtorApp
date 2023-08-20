@@ -7,7 +7,7 @@ import java.util.*
 data class Order(
     val id : String = UUID.randomUUID().toString(),
     val orderName : String = Date().toString(),
-    val customerId : Int,
+    var customerId : Int = 0,
     val contents : List<OrderItem>
 )
 

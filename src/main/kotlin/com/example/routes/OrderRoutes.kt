@@ -1,5 +1,6 @@
 package com.example.routes
 
+import com.example.di.customerRepositoryModule
 import com.example.domain.models.Order
 import com.example.repository.OrderInMemRepository
 import io.ktor.http.*
@@ -11,12 +12,39 @@ import org.koin.ktor.ext.inject
 
 fun Route.orderRoutes(){
 
+
+    //GET /orders/{customerId}/{orderId}/total
+
     val orderRepository by inject<OrderInMemRepository>()
 
-    route("/orders"){
+//    route("/orders/total/{param...}"){
+//        get {
+//            val params = call.parameters.getAll("param")
+//            if (params.isNullOrEmpty()){
+//                return@get call.respond(HttpStatusCode.BadRequest, "Invalid parameters, please check Api Doc")
+//            }
+//            if (params!!.size != 2){
+//                return@get call.respond(HttpStatusCode.BadRequest, "2 params must pass")
+//            }
+//            val customerId = params[0]
+//            val orderId = params[1]
+//            return@get call.respond("customer id : $customerId, order id : $orderId")
+//        }
+//    }
+
+
+    route("/orders/{customerId}"){
 
         get {
-            call.respond(HttpStatusCode.OK, orderRepository.getAllOrders())
+            val customerId = call.parameters["customerId"] ?: call.respond(HttpStatusCode.BadRequest, "Missing customer id")
+           return@get try {
+               val id = (customerId as String).toInt()
+               val results = orderRepository.getAllOrders(id)
+               call.respond(HttpStatusCode.OK, results)
+            }catch (e : Exception){
+                call.respond(HttpStatusCode.BadRequest, "bad customer id")
+            }
+
         }
 
         get("{id?}"){
@@ -27,20 +55,11 @@ fun Route.orderRoutes(){
             } ?: call.respond(HttpStatusCode.NotFound, "No order exist")
         }
 
-        get("{id?}/total"){
-            val pathId = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing id")
-            try {
-                val total = orderRepository.getOrderTotal(pathId)
-                return@get call.respond(HttpStatusCode.OK, total)
-
-            }catch (e : Exception){
-                return@get call.respond(HttpStatusCode.InternalServerError)
-            }
-        }
-
         post {
             try {
+                val customerId = call.parameters["customerId"] ?: call.respond(HttpStatusCode.BadRequest, "Missing customer id")
                 val order = call.receive<Order>()
+                order.customerId = (customerId as String).toInt()
                 val result = orderRepository.addOrder(order)
                 return@post if (result)
                     call.respond(HttpStatusCode.OK, order)
@@ -66,6 +85,8 @@ fun Route.orderRoutes(){
                 call.respond(HttpStatusCode.InternalServerError)
             }
         }
+
+        orderUtilRoutes()
 
     }
 }
